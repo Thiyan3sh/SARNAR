@@ -1,0 +1,497 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>EcoMarket - Sustainable Shopping Platform</title>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        :root {
+            --primary-color: #2ecc71;
+            --secondary-color: #27ae60;
+            --bg-color: #f8f9fa;
+            --text-color: #2c3e50;
+        }
+
+        body {
+            font-family: 'Segoe UI', sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            margin: 0;
+        }
+
+        .navbar {
+            background: white;
+            padding: 1rem 2rem;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+            position: fixed;
+            width: 100%;
+            top: 0;
+            z-index: 1000;
+        }
+
+        .nav-links {
+            display: flex;
+            gap: 1.5rem;
+            justify-content: center;
+        }
+
+        .nav-links a {
+            cursor: pointer;
+            color: var(--text-color);
+            text-decoration: none;
+            font-weight: 500;
+            transition: color 0.3s;
+        }
+
+        .nav-links a:hover {
+            color: var(--primary-color);
+        }
+
+        .main-content {
+            margin-top: 80px;
+            padding: 2rem;
+            max-width: 1200px;
+            margin: 80px auto 0 auto;
+        }
+
+        .section {
+            display: none;
+            animation: fadeIn 0.5s;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+
+        .section.active {
+            display: block;
+        }
+
+        .hero {
+            background: linear-gradient(rgba(46, 204, 113, 0.1), rgba(46, 204, 113, 0.2));
+            padding: 4rem 2rem;
+            text-align: center;
+            border-radius: 1rem;
+            margin-bottom: 2rem;
+        }
+
+        .product-card, .store-card {
+            background: white;
+            padding: 1.5rem;
+            border-radius: 1rem;
+            margin-bottom: 1rem;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+            transition: transform 0.3s;
+        }
+
+        .product-card:hover, .store-card:hover {
+            transform: translateY(-5px);
+        }
+
+        .products-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+            gap: 2rem;
+            margin: 2rem 0;
+        }
+
+        .product-image {
+            width: 100%;
+            height: 200px;
+            background-color: #eee;
+            border-radius: 0.5rem;
+            margin-bottom: 1rem;
+        }
+
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.5);
+            z-index: 1001;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .modal-content {
+            background: white;
+            padding: 2rem;
+            border-radius: 1rem;
+            max-width: 800px;
+            width: 90%;
+            max-height: 90vh;
+            overflow-y: auto;
+        }
+
+        .close-btn {
+            float: right;
+            cursor: pointer;
+            font-size: 1.5rem;
+        }
+
+        .select-container {
+            margin: 2rem 0;
+            text-align: center;
+        }
+
+        select {
+            padding: 0.5rem 1rem;
+            font-size: 1rem;
+            border: 2px solid var(--primary-color);
+            border-radius: 0.5rem;
+            margin-right: 1rem;
+        }
+
+        .price-predict-btn {
+            padding: 0.5rem 1rem;
+            background: var(--primary-color);
+            color: white;
+            border: none;
+            border-radius: 0.5rem;
+            cursor: pointer;
+            transition: background 0.3s;
+        }
+
+        .price-predict-btn:hover {
+            background: var(--secondary-color);
+        }
+
+        .store-stats {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 1rem;
+            margin-top: 1rem;
+        }
+
+        .stat-card {
+            background: #f8f9fa;
+            padding: 1rem;
+            border-radius: 0.5rem;
+            text-align: center;
+        }
+
+        .rating {
+            color: #ffd700;
+            margin: 0.5rem 0;
+        }
+
+        .badge {
+            display: inline-block;
+            padding: 0.25rem 0.5rem;
+            background: var(--primary-color);
+            color: white;
+            border-radius: 1rem;
+            font-size: 0.8rem;
+            margin: 0.2rem;
+        }
+    </style>
+</head>
+<body>
+    <nav class="navbar">
+        <div class="nav-links">
+            <a onclick="navigateTo('home')">Home</a>
+            <a onclick="navigateTo('stores')">Stores</a>
+            <a onclick="navigateTo('products')">Products</a>
+            <a onclick="navigateTo('carbonTracker')">Carbon Tracker</a>
+            <a onclick="navigateTo('account')">My Account</a>
+        </div>
+    </nav>
+
+    <div id="priceModal" class="modal">
+        <div class="modal-content">
+            <span class="close-btn" onclick="closeModal()">&times;</span>
+            <h2>Price Prediction</h2>
+            <canvas id="priceChart"></canvas>
+        </div>
+    </div>
+
+    <main class="main-content">
+        <!-- Home Section -->
+        <section id="home" class="section active">
+            <div class="hero">
+                <h1>Shop Sustainably, Live Responsibly</h1>
+                <p>Connect with local eco-friendly stores and track your environmental impact</p>
+                <div class="search-bar">
+                    <input type="text" placeholder="Search trending products..." style="padding: 0.5rem; width: 70%; margin: 1rem 0;"> <!-- Search Bar -->
+                </div>
+                <div class="trending-products"> <!-- Trending Products Section -->
+                    <h2>Trending Products</h2>
+                    <p>Check out the popular eco-friendly products this season!</p>
+                    <div class="products-grid">
+                        <div class="product-card">
+                            <div class="product-image"></div>
+                            <h3>Reusable Bamboo Utensils</h3>
+                            <p>$15.99</p>
+                        </div>
+                        <div class="product-card">
+                            <div class="product-image"></div>
+                            <h3>Organic Cotton Tote Bag</h3>
+                            <p>$9.99</p>
+                        </div>
+                        <div class="product-card">
+                            <div class="product-image"></div>
+                            <h3>Eco-Friendly Water Bottle</h3>
+                            <p>$12.50</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="select-container">
+                    <select id="vegetableSelect">
+                        <option value="">Select a vegetable</option>
+                        <option value="tomato">Tomatoes</option>
+                        <option value="potato">Potatoes</option>
+                        <option value="carrot">Carrots</option>
+                        <option value="spinach">Spinach</option>
+                        <option value="cucumber">Cucumber</option>
+                    </select>
+                    <button class="price-predict-btn" onclick="showPricePrediction()">Show Price Prediction</button>
+                </div>
+            </div>
+        </section>
+
+
+        <!-- Stores Section -->
+        <section id="stores" class="section">
+            <h2>Local Eco-Friendly Stores</h2>
+            <div class="store-card">
+                <h3>Green Grove Market</h3>
+                <div class="rating">★★★★★</div>
+                <p>Specializing in organic produce and eco-friendly household products.</p>
+                <div class="store-stats">
+                    <div class="stat-card">
+                        <h4>Carbon Score</h4>
+                        <p>92/100</p>
+                    </div>
+                    <div class="stat-card">
+                        <h4>Local Sourcing</h4>
+                        <p>85%</p>
+                    </div>
+                    <div class="stat-card">
+                        <h4>Eco Credits</h4>
+                        <p>1,250</p>
+                    </div>
+                </div>
+                <div>
+                    <span class="badge">Organic Certified</span>
+                    <span class="badge">Zero Waste</span>
+                    <span class="badge">Local First</span>
+                </div>
+            </div>
+            <div class="store-card">
+                <h3>Sustainable Solutions</h3>
+                <div class="rating">★★★★½</div>
+                <p>Your one-stop shop for eco-friendly and biodegradable products.</p>
+                <div class="store-stats">
+                    <div class="stat-card">
+                        <h4>Carbon Score</h4>
+                        <p>88/100</p>
+                    </div>
+                    <div class="stat-card">
+                        <h4>Local Sourcing</h4>
+                        <p>78%</p>
+                    </div>
+                    <div class="stat-card">
+                        <h4>Eco Credits</h4>
+                        <p>980</p>
+                    </div>
+                </div>
+                <div>
+                    <span class="badge">Plastic Free</span>
+                    <span class="badge">Fair Trade</span>
+                    <span class="badge">Community Partner</span>
+                </div>
+            </div>
+        </section>
+
+        <!-- Products Section -->
+        <section id="products" class="section">
+            <h2>Featured Products</h2>
+            <div class="products-grid">
+                <div class="product-card">
+                    <div class="product-image"></div>
+                    <h3>Organic Vegetables Bundle</h3>
+                    <p>$25.99</p>
+                    <p>Green Grove Market</p>
+                    <div class="rating">★★★★★</div>
+                    <span class="badge">Organic</span>
+                    <span class="badge">Local</span>
+                </div>
+                <div class="product-card">
+                    <div class="product-image"></div>
+                    <h3>Seasonal Fruit Basket</h3>
+                    <p>$32.99</p>
+                    <p>Green Grove Market</p>
+                    <div class="rating">★★★★½</div>
+                    <span class="badge">Seasonal</span>
+                    <span class="badge">Fresh</span>
+                </div>
+                <div class="product-card">
+                    <div class="product-image"></div>
+                    <h3>Eco-friendly Cleaning Kit</h3>
+                    <p>$34.99</p>
+                    <p>Sustainable Solutions</p>
+                    <div class="rating">★★★★★</div>
+                    <span class="badge">Zero Waste</span>
+                    <span class="badge">Chemical Free</span>
+                </div>
+            </div>
+        </section>
+
+        <!-- Carbon Tracker Section -->
+        <section id="carbonTracker" class="section">
+            <h2>Carbon Emission Tracker</h2>
+            <div class="product-card">
+                <h3>Calculate Your Shopping Impact</h3>
+                <input type="number" id="distance" placeholder="Distance (in km)" style="padding: 0.5rem; margin: 1rem 0;">
+                <button onclick="calculateCarbon()" class="price-predict-btn">Calculate</button>
+                <p id="carbonResult"></p>
+            </div>
+        </section>
+
+        <!-- Account Section -->
+        <section id="account" class="section">
+            <h2>My Account</h2>
+            <div class="product-card">
+                <h3>Your Eco Impact</h3>
+                <div class="store-stats">
+                    <div class="stat-card">
+                        <h4>Total Savings</h4>
+                        <p>$245.50</p>
+                    </div>
+                    <div class="stat-card">
+                        <h4>Carbon Reduced</h4>
+                        <p>156 kg CO2</p>
+                    </div>
+                    <div class="stat-card">
+                        <h4>Eco Credits</h4>
+                        <p>750</p>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <section id="predictions" class="section">
+            <h2>Wholesale Price Predictions</h2>
+            <canvas id="predictionChart"></canvas>
+        </section>
+    </main>
+
+    <script>
+        // Navigation
+        function navigateTo(sectionId) {
+            document.querySelectorAll('.section').forEach(section => section.classList.remove('active'));
+            document.getElementById(sectionId).classList.add('active');
+        }
+
+        // Price prediction data
+        const priceData = {
+            tomato: {
+                history: [3.99, 4.50, 4.25, 3.75, 3.99, 4.75, 5.25, 4.99, 4.50],
+                prediction: [4.75, 5.00, 5.25]
+            },
+            potato: {
+                history: [2.99, 2.75, 2.50, 2.99, 3.25, 3.50, 3.25, 2.99, 2.75],
+                prediction: [2.50, 2.25, 2.00]
+            },
+            carrot: {
+                history: [1.99, 2.25, 2.50, 2.75, 2.99, 2.75, 2.50, 2.25, 1.99],
+                prediction: [1.75, 1.50, 1.25]
+            },
+            spinach: {
+                history: [4.50, 4.75, 4.99, 5.25, 5.50, 5.25, 4.99, 4.75, 4.50],
+                prediction: [4.25, 4.00, 3.75]
+            },
+            cucumber: {
+                history: [1.50, 1.75, 2.00, 2.25, 2.50, 2.75, 2.50, 2.25, 2.00],
+                prediction: [1.75, 1.50, 1.25]
+            }
+        };
+        let priceChart = null;
+
+function showPricePrediction() {
+    const vegetable = document.getElementById('vegetableSelect').value;
+    if (!vegetable) return;
+
+    const modal = document.getElementById('priceModal');
+    modal.style.display = 'flex';
+
+    const data = priceData[vegetable];
+    const months = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October'];
+
+    if (priceChart) {
+        priceChart.destroy();
+    }
+
+    const ctx = document.getElementById('priceChart').getContext('2d');
+    priceChart = new Chart(ctx, {
+        type: 'line',
+        data: {
+            labels: months,
+            datasets: [
+                {
+                    label: 'Wholesale Price History',
+                    data: [40, 35, 50, 45, 60, 55, 70, 65, 55, null],
+                    borderColor: 'rgba(255, 99, 132, 1)',
+                    borderWidth: 2,
+                    fill: false
+                },
+                {
+                    label: 'Predicted Wholesale Price',
+                    data: [null, null, null, null, null, null, null, null, 55, 60],
+                    borderColor: 'rgba(54, 162, 235, 1)',
+                    borderWidth: 2,
+                    fill: false
+                }
+            ]
+        },
+        options: {
+            responsive: true,
+            plugins: {
+                legend: {
+                    display: true,
+                    position: 'top',
+                }
+            },
+            scales: {
+                x: {
+                    title: {
+                        display: true,
+                        text: 'Month'
+                    }
+                },
+                y: {
+                    title: {
+                        display: true,
+                        text: 'Price ($)'
+                    },
+                    beginAtZero: true
+                }
+            }
+        }
+    });
+}
+
+function closeModal() {
+    document.getElementById('priceModal').style.display = 'none';
+}
+
+
+// Carbon Emission Calculation
+function calculateCarbon() {
+const distance = document.getElementById('distance').value;
+if (!distance) {
+document.getElementById('carbonResult').innerText = "Please enter a distance.";
+return;
+}
+const emissions = (distance * 0.133).toFixed(2); // assuming 0.133 kg CO2 per km
+document.getElementById('carbonResult').innerText = `Estimated Emissions: ${emissions} kg CO2`;
+}
+</script>
+</body>
+</html>
