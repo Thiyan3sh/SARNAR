@@ -1,664 +1,916 @@
 <!DOCTYPE html>
 <html lang="en">
-<!-- Basic -->
-
 <head>
-    <meta charset="utf-8">
-    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>India Crop Production Map</title>
+    
+    <!-- Leaflet CSS & JS -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.7.1/dist/leaflet.css" />
+    <script src="https://unpkg.com/leaflet@1.7.1/dist/leaflet.js"></script>
+    
+    <!-- Animation library -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.6.0/jquery.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.9.1/gsap.min.js"></script>
 
-    <!-- Mobile Metas -->
-    <meta name="viewport" content="width=device-width, initial-scale=1">
-
-    <!-- Site Metas -->
-    <title>Freshshop - Ecommerce Bootstrap 4 HTML Template</title>
-    <meta name="keywords" content="">
-    <meta name="description" content="">
-    <meta name="author" content="">
-
-    <!-- Site Icons -->
-    <link rel="shortcut icon" href="images/favicon.ico" type="image/x-icon">
-    <link rel="apple-touch-icon" href="images/apple-touch-icon.png">
-
-    <!-- Bootstrap CSS -->
-    <link rel="stylesheet" href="css/bootstrap.min.css">
-    <!-- Site CSS -->
-    <link rel="stylesheet" href="css/style.css">
-    <!-- Responsive CSS -->
-    <link rel="stylesheet" href="css/responsive.css">
-    <!-- Custom CSS -->
-    <link rel="stylesheet" href="css/custom.css">
-
-    <!--[if lt IE 9]>
-      <script src="https://oss.maxcdn.com/libs/html5shiv/3.7.0/html5shiv.js"></script>
-      <script src="https://oss.maxcdn.com/libs/respond.js/1.4.2/respond.min.js"></script>
-    <![endif]-->
-
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            margin: 0;
+            padding: 0;
+            background-color: #f5f5f5;
+            color: #333;
+        }
+        .container {
+            display: flex;
+            flex-direction: row;
+            height: 100vh;
+        }
+        #sidebar {
+            width: 30%;
+            padding: 20px;
+            background: white;
+            box-shadow: 3px 0 15px rgba(0,0,0,0.1);
+            overflow-y: auto;
+            transition: all 0.3s ease;
+            z-index: 1000;
+        }
+        #map {
+            flex-grow: 1;
+            height: 100vh;
+            transition: all 0.3s ease;
+        }
+        h1 {
+            color: #d32f2f;
+            text-align: center;
+            font-size: 22px;
+            margin-bottom: 20px;
+            border-bottom: 2px solid #f0f0f0;
+            padding-bottom: 10px;
+        }
+        h2 {
+            color: #388e3c;
+            margin-top: 20px;
+        }
+        h3 {
+            color: #1976d2;
+            margin-top: 15px;
+            border-bottom: 1px solid #e0e0e0;
+            padding-bottom: 5px;
+        }
+        select, input {
+            width: 100%;
+            padding: 12px;
+            margin-bottom: 15px;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            font-size: 15px;
+            transition: all 0.3s;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+        }
+        select:focus, input:focus {
+            outline: none;
+            border-color: #d32f2f;
+            box-shadow: 0 0 0 3px rgba(211, 47, 47, 0.2);
+        }
+        .district-item {
+            padding: 10px 15px;
+            margin: 5px 0;
+            cursor: pointer;
+            border-radius: 6px;
+            background-color: #f9f9f9;
+            transition: all 0.2s ease;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .district-item:hover {
+            background: #f0f0f0;
+            transform: translateX(5px);
+        }
+        .district-item span {
+            color: #777;
+            font-size: 14px;
+        }
+        .info {
+            background-color: #f5f5f5;
+            padding: 15px;
+            border-radius: 8px;
+            margin: 15px 0;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+        }
+        .stats {
+            display: flex;
+            justify-content: space-between;
+            margin-top: 10px;
+        }
+        .stat-box {
+            flex: 1;
+            text-align: center;
+            padding: 10px;
+            background: #fff;
+            border-radius: 8px;
+            margin: 0 5px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+            transition: all 0.3s;
+        }
+        .stat-box:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+        }
+        .stat-value {
+            font-size: 20px;
+            font-weight: bold;
+            color: #d32f2f;
+        }
+        .stat-label {
+            font-size: 12px;
+            color: #777;
+        }
+        .legend {
+            background: white;
+            padding: 10px;
+            border-radius: 5px;
+            box-shadow: 0 0 15px rgba(0,0,0,0.1);
+            margin-top: 15px;
+        }
+        .legend-item {
+            display: flex;
+            align-items: center;
+            margin: 5px 0;
+        }
+        .legend-color {
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            margin-right: 10px;
+        }
+        .pulse {
+            animation: pulse 1.5s infinite;
+        }
+        @keyframes pulse {
+            0% {
+                transform: scale(0.95);
+                box-shadow: 0 0 0 0 rgba(211, 47, 47, 0.7);
+            }
+            70% {
+                transform: scale(1);
+                box-shadow: 0 0 0 10px rgba(211, 47, 47, 0);
+            }
+            100% {
+                transform: scale(0.95);
+                box-shadow: 0 0 0 0 rgba(211, 47, 47, 0);
+            }
+        }
+        .toggle-sidebar {
+            position: absolute;
+            top: 10px;
+            left: calc(30% + 10px);
+            z-index: 1001;
+            background: white;
+            border: none;
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+        .toggle-sidebar:hover {
+            background: #f5f5f5;
+        }
+        .sidebar-collapsed {
+            width: 0;
+            padding: 0;
+            overflow: hidden;
+        }
+        #crop-icon {
+            max-width: 50px;
+            margin: 0 auto 10px;
+            display: block;
+        }
+        .crop-badge {
+            display: inline-block;
+            padding: 5px 10px;
+            background: #f0f0f0;
+            border-radius: 20px;
+            margin-right: 5px;
+            margin-bottom: 5px;
+            font-size: 12px;
+            transition: all 0.3s;
+            cursor: pointer;
+        }
+        .crop-badge:hover, .crop-badge.active {
+            background: #d32f2f;
+            color: white;
+        }
+    </style>
 </head>
-
 <body>
 
-    <!-- Start Main Top -->
-    <header class="main-header">
-        <!-- Start Navigation -->
-        <nav class="navbar navbar-expand-lg navbar-light bg-light navbar-default bootsnav">
-            <div class="container">
-                <!-- Start Header Navigation -->
-                <div class="navbar-header">
-                    <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbar-menu" aria-controls="navbars-rs-food" aria-expanded="false" aria-label="Toggle navigation">
-                    <i class="fa fa-bars"></i>
-                </button>
-                    <a class="navbar-brand" href="index.html"><h1>SARNAR</h1></a>
+    <div class="container">
+        <!-- Sidebar for Selection, Search & Details -->
+        <div id="sidebar">
+            <h1>India Crop Production Map</h1>
+            <img id="crop-icon" src="/api/placeholder/50/50" alt="Crop Icon">
+            
+            <div class="crop-selector">
+                <div id="crop-badges">
+                    <div class="crop-badge active" data-crop="tomato">Tomato</div>
+                    <div class="crop-badge" data-crop="onion">Onion</div>
+                    <div class="crop-badge" data-crop="potato">Potato</div>
+                    <div class="crop-badge" data-crop="sugarcane">Sugarcane</div>
+                    <div class="crop-badge" data-crop="jasmine">Jasmine</div>
                 </div>
-                <!-- End Header Navigation -->
-
-                <!-- Collect the nav links, forms, and other content for toggling -->
-                <div class="collapse navbar-collapse" id="navbar-menu">
-                    <ul class="nav navbar-nav ml-auto" data-in="fadeInDown" data-out="fadeOutUp">
-                        <li class="nav-item"><a class="nav-link" href="index.html">Home</a></li>
-                      
-                        <li class="dropdown active">
-                            <a href="#" class="nav-link dropdown-toggle arrow" data-toggle="dropdown">Buy</a>
-                            <ul class="dropdown-menu">
-								
-                                <li><a href="checkout.html">Checkout</a></li>
-                                <li><a href="my-account.html">My Account</a></li>
-                                <li><a href="wishlist.html">Wishlist</a></li>
-                            </ul>
-                        </li>
-                        <li><a class="nav-link" href="sana.html">Prediction</a></li>
-                        <li class="nav-item"><a class="nav-link" href="gallery.html">Gallery</a></li>
-                        <li class="nav-item"><a class="nav-link" href="contact-us.html">Shop</a></li>
-                    </ul>
+                <select id="crop-select">
+                    <option value="tomato">Tomato</option>
+                    <option value="onion">Onion</option>
+                    <option value="potato">Potato</option>
+                    <option value="sugarcane">Sugarcane</option>
+                    <option value="jasmine">Jasmine</option>
+                </select>
+            </div>
+            
+            <input type="text" id="search" placeholder="Search State/District">
+            
+            <div class="info" id="state-info">Select a crop and click a state for details.</div>
+            <div id="district-list"></div>
+            
+            <div class="legend">
+                <h3>Legend</h3>
+                <div class="legend-item">
+                    <div class="legend-color" style="background: red;"></div>
+                    <div>Major Production Center</div>
                 </div>
-                <!-- /.navbar-collapse -->
-
-                <!-- Start Atribute Navigation -->
-                <div class="attr-nav">
-                    <ul>
-                        <li class="search"><a href="#"><i class="fa fa-search"></i></a></li>
-                        <li class="side-menu"><a href="#">
-						<i class="fa fa-shopping-bag"></i>
-                            <span class="badge">3</span>
-							<p>My Cart</p>
-					</a></li>
-                    </ul>
+                <div class="legend-item">
+                    <div class="legend-color" style="background: orange;"></div>
+                    <div>Medium Production Center</div>
                 </div>
-                <!-- End Atribute Navigation -->
-            </div>
-            <!-- Start Side Menu -->
-            <div class="side">
-                <a href="#" class="close-side"><i class="fa fa-times"></i></a>
-                <li class="cart-box">
-                    <ul class="cart-list">
-                        <li>
-                            <a href="#" class="photo"><img src="images/Carrot.jpg" class="cart-thumb" alt="" /></a>
-                            <h6><a href="#">Delica omtantur </a></h6>
-                            <p>1x - <span class="price">$80.00</span></p>
-                        </li>
-                        <li>
-                            <a href="#" class="photo"><img src="images/Tomato.jpg" class="cart-thumb" alt="" /></a>
-                            <h6><a href="#">Omnes ocurreret</a></h6>
-                            <p>1x - <span class="price">$60.00</span></p>
-                        </li>
-                        <li>
-                            <a href="#" class="photo"><img src="images/img-pro-03.jpg" class="cart-thumb" alt="" /></a>
-                            <h6><a href="#">Agam facilisis</a></h6>
-                            <p>1x - <span class="price">$40.00</span></p>
-                        </li>
-                        <li class="total">
-                            <a href="#" class="btn btn-default hvr-hover btn-cart">VIEW CART</a>
-                            <span class="float-right"><strong>Total</strong>: $180.00</span>
-                        </li>
-                    </ul>
-                </li>
-            </div>
-            <!-- End Side Menu -->
-        </nav>
-        <!-- End Navigation -->
-    </header>
-    <!-- End Main Top -->
-
-    <!-- Start Top Search -->
-    <div class="top-search">
-        <div class="container">
-            <div class="input-group">
-                <span class="input-group-addon"><i class="fa fa-search"></i></span>
-                <input type="text" class="form-control" placeholder="Search">
-                <span class="input-group-addon close-search"><i class="fa fa-times"></i></span>
-            </div>
-        </div>
-    </div>
-    <!-- End Top Search -->
-
-    <!-- Start All Title Box -->
-    <div class="all-title-box">
-        <div class="container">
-            <div class="row">
-                <div class="col-lg-12">
-                    <h2>Shop</h2>
-                    <ul class="breadcrumb">
-                        <li class="breadcrumb-item"><a href="#">Home</a></li>
-                        <li class="breadcrumb-item active">Shop</li>
-                    </ul>
+                <div class="legend-item">
+                    <div class="legend-color" style="background: green;"></div>
+                    <div>Minor Production Center</div>
                 </div>
             </div>
         </div>
+        
+        <button class="toggle-sidebar" id="toggle-btn">≡</button>
+        
+        <!-- Map Container -->
+        <div id="map"></div>
     </div>
-    <!-- End All Title Box -->
 
-    <!-- Start Shop Page  -->
-    <div class="shop-box-inner">
-        <div class="container">
-            <div class="row">
-                <div class="col-xl-9 col-lg-9 col-sm-12 col-xs-12 shop-content-right">
-                    <div class="right-product-box">
-                        <div class="product-item-filter row">
-                            <div class="col-12 col-sm-8 text-center text-sm-left">
-                                <div class="toolbar-sorter-right">
-                                    <span>Sort by </span>
-                                    <select id="basic" class="selectpicker show-tick form-control" data-placeholder="$ USD">
-									<option data-display="Select">Nothing</option>
-									<option value="1">Popularity</option>
-									<option value="2">High Price → High Price</option>
-									<option value="3">Low Price → High Price</option>
-									<option value="4">Best Selling</option>
-								</select>
-                                </div>
-                                <p>Showing all 4 results</p>
-                            </div>
-                            <div class="col-12 col-sm-4 text-center text-sm-right">
-                                <ul class="nav nav-tabs ml-auto">
-                                    <li>
-                                        <a class="nav-link active" href="#grid-view" data-toggle="tab"> <i class="fa fa-th"></i> </a>
-                                    </li>
-                                    <li>
-                                        <a class="nav-link" href="#list-view" data-toggle="tab"> <i class="fa fa-list-ul"></i> </a>
-                                    </li>
-                                </ul>
-                            </div>
-                        </div>
+    <script>
+        // Initialize map
+        var map = L.map('map').setView([22, 80], 5);
 
-                        <div class="product-categorie-box">
-                            <div class="tab-content">
-                                <div role="tabpanel" class="tab-pane fade show active" id="grid-view">
-                                    <div class="row">
-                                        <div class="col-sm-6 col-md-6 col-lg-4 col-xl-4">
-                                            <div class="products-single fix">
-                                                <div class="box-img-hover">
-                                                    <div class="type-lb">
-                                                        <p class="sale">Sale</p>
-                                                    </div>
-                                                    <img src="images/Carrot.jpg" class="img-fluid" alt="Image">
-                                                    <div class="mask-icon">
-                                                        <ul>
-                                                            <li><a href="#" data-toggle="tooltip" data-placement="right" title="View"><i class="fas fa-eye"></i></a></li>
-                                                            <li><a href="#" data-toggle="tooltip" data-placement="right" title="Compare"><i class="fas fa-sync-alt"></i></a></li>
-                                                            <li><a href="#" data-toggle="tooltip" data-placement="right" title="Add to Wishlist"><i class="far fa-heart"></i></a></li>
-                                                        </ul>
-                                                        <a class="cart" href="#">Add to Cart</a>
-                                                    </div>
-                                                </div>
-                                                <div class="why-text">
-                                                    <h4>Lorem ipsum dolor sit amet</h4>
-                                                    <h5> $9.79</h5>
-                                                </div>
-                                            </div>
-                                        </div>
-                                        <div class="col-sm-6 col-md-6 col-lg-4 col-xl-4">
-                                            <div class="products-single fix">
-                                                <div class="box-img-hover">
-                                                    <div class="type-lb">
-                                                        <p class="new">New</p>
-                                                    </div>
-                                                    <img src="images/Tomato.jpg" class="img-fluid" alt="Image">
-                                                    <div class="mask-icon">
-                                                        <ul>
-                                                            <li><a href="#" data-toggle="tooltip" data-placement="right" title="View"><i class="fas fa-eye"></i></a></li>
-                                                            <li><a href="#" data-toggle="tooltip" data-placement="right" title="Compare"><i class="fas fa-sync-alt"></i></a></li>
-                                                            <li><a href="#" data-toggle="tooltip" data-placement="right" title="Add to Wishlist"><i class="far fa-heart"></i></a></li>
-                                                        </ul>
-                                                        <a class="cart" href="#">Add to Cart</a>
-                                                    </div>
-                                                </div>
-                                                <div class="why-text">
-                                                    <h4>Lorem ipsum dolor sit amet</h4>
-                                                    <h5> $9.79</h5>
-                                                </div>
-                                            </div>
-                                        </div>
-                                        <div class="col-sm-6 col-md-6 col-lg-4 col-xl-4">
-                                            <div class="products-single fix">
-                                                <div class="box-img-hover">
-                                                    <div class="type-lb">
-                                                        <p class="sale">Sale</p>
-                                                    </div>
-                                                    <img src="images/img-pro-03.jpg" class="img-fluid" alt="Image">
-                                                    <div class="mask-icon">
-                                                        <ul>
-                                                            <li><a href="#" data-toggle="tooltip" data-placement="right" title="View"><i class="fas fa-eye"></i></a></li>
-                                                            <li><a href="#" data-toggle="tooltip" data-placement="right" title="Compare"><i class="fas fa-sync-alt"></i></a></li>
-                                                            <li><a href="#" data-toggle="tooltip" data-placement="right" title="Add to Wishlist"><i class="far fa-heart"></i></a></li>
-                                                        </ul>
-                                                        <a class="cart" href="#">Add to Cart</a>
-                                                    </div>
-                                                </div>
-                                                <div class="why-text">
-                                                    <h4>Lorem ipsum dolor sit amet</h4>
-                                                    <h5> $9.79</h5>
-                                                </div>
-                                            </div>
-                                        </div>
-                                        <div class="col-sm-6 col-md-6 col-lg-4 col-xl-4">
-                                            <div class="products-single fix">
-                                                <div class="box-img-hover">
-                                                    <div class="type-lb">
-                                                        <p class="new">New</p>
-                                                    </div>
-                                                    <img src="images/Carrot.jpg" class="img-fluid" alt="Image">
-                                                    <div class="mask-icon">
-                                                        <ul>
-                                                            <li><a href="#" data-toggle="tooltip" data-placement="right" title="View"><i class="fas fa-eye"></i></a></li>
-                                                            <li><a href="#" data-toggle="tooltip" data-placement="right" title="Compare"><i class="fas fa-sync-alt"></i></a></li>
-                                                            <li><a href="#" data-toggle="tooltip" data-placement="right" title="Add to Wishlist"><i class="far fa-heart"></i></a></li>
-                                                        </ul>
-                                                        <a class="cart" href="#">Add to Cart</a>
-                                                    </div>
-                                                </div>
-                                                <div class="why-text">
-                                                    <h4>Lorem ipsum dolor sit amet</h4>
-                                                    <h5> $9.79</h5>
-                                                </div>
-                                            </div>
-                                        </div>
-                                        <div class="col-sm-6 col-md-6 col-lg-4 col-xl-4">
-                                            <div class="products-single fix">
-                                                <div class="box-img-hover">
-                                                    <div class="type-lb">
-                                                        <p class="sale">Sale</p>
-                                                    </div>
-                                                    <img src="images/Tomato.jpg" class="img-fluid" alt="Image">
-                                                    <div class="mask-icon">
-                                                        <ul>
-                                                            <li><a href="#" data-toggle="tooltip" data-placement="right" title="View"><i class="fas fa-eye"></i></a></li>
-                                                            <li><a href="#" data-toggle="tooltip" data-placement="right" title="Compare"><i class="fas fa-sync-alt"></i></a></li>
-                                                            <li><a href="#" data-toggle="tooltip" data-placement="right" title="Add to Wishlist"><i class="far fa-heart"></i></a></li>
-                                                        </ul>
-                                                        <a class="cart" href="#">Add to Cart</a>
-                                                    </div>
-                                                </div>
-                                                <div class="why-text">
-                                                    <h4>Lorem ipsum dolor sit amet</h4>
-                                                    <h5> $9.79</h5>
-                                                </div>
-                                            </div>
-                                        </div>
-                                        <div class="col-sm-6 col-md-6 col-lg-4 col-xl-4">
-                                            <div class="products-single fix">
-                                                <div class="box-img-hover">
-                                                    <div class="type-lb">
-                                                        <p class="sale">Sale</p>
-                                                    </div>
-                                                    <img src="images/img-pro-03.jpg" class="img-fluid" alt="Image">
-                                                    <div class="mask-icon">
-                                                        <ul>
-                                                            <li><a href="#" data-toggle="tooltip" data-placement="right" title="View"><i class="fas fa-eye"></i></a></li>
-                                                            <li><a href="#" data-toggle="tooltip" data-placement="right" title="Compare"><i class="fas fa-sync-alt"></i></a></li>
-                                                            <li><a href="#" data-toggle="tooltip" data-placement="right" title="Add to Wishlist"><i class="far fa-heart"></i></a></li>
-                                                        </ul>
-                                                        <a class="cart" href="#">Add to Cart</a>
-                                                    </div>
-                                                </div>
-                                                <div class="why-text">
-                                                    <h4>Lorem ipsum dolor sit amet</h4>
-                                                    <h5> $9.79</h5>
-                                                </div>
-                                            </div>
-                                        </div>
-                                        <div class="col-sm-6 col-md-6 col-lg-4 col-xl-4">
-                                            <div class="products-single fix">
-                                                <div class="box-img-hover">
-                                                    <div class="type-lb">
-                                                        <p class="sale">Sale</p>
-                                                    </div>
-                                                    <img src="images/Carrot.jpg" class="img-fluid" alt="Image">
-                                                    <div class="mask-icon">
-                                                        <ul>
-                                                            <li><a href="#" data-toggle="tooltip" data-placement="right" title="View"><i class="fas fa-eye"></i></a></li>
-                                                            <li><a href="#" data-toggle="tooltip" data-placement="right" title="Compare"><i class="fas fa-sync-alt"></i></a></li>
-                                                            <li><a href="#" data-toggle="tooltip" data-placement="right" title="Add to Wishlist"><i class="far fa-heart"></i></a></li>
-                                                        </ul>
-                                                        <a class="cart" href="#">Add to Cart</a>
-                                                    </div>
-                                                </div>
-                                                <div class="why-text">
-                                                    <h4>Lorem ipsum dolor sit amet</h4>
-                                                    <h5> $9.79</h5>
-                                                </div>
-                                            </div>
-                                        </div>
-                                        <div class="col-sm-6 col-md-6 col-lg-4 col-xl-4">
-                                            <div class="products-single fix">
-                                                <div class="box-img-hover">
-                                                    <div class="type-lb">
-                                                        <p class="sale">Sale</p>
-                                                    </div>
-                                                    <img src="images/Tomato.jpg" class="img-fluid" alt="Image">
-                                                    <div class="mask-icon">
-                                                        <ul>
-                                                            <li><a href="#" data-toggle="tooltip" data-placement="right" title="View"><i class="fas fa-eye"></i></a></li>
-                                                            <li><a href="#" data-toggle="tooltip" data-placement="right" title="Compare"><i class="fas fa-sync-alt"></i></a></li>
-                                                            <li><a href="#" data-toggle="tooltip" data-placement="right" title="Add to Wishlist"><i class="far fa-heart"></i></a></li>
-                                                        </ul>
-                                                        <a class="cart" href="#">Add to Cart</a>
-                                                    </div>
-                                                </div>
-                                                <div class="why-text">
-                                                    <h4>Lorem ipsum dolor sit amet</h4>
-                                                    <h5> $9.79</h5>
-                                                </div>
-                                            </div>
-                                        </div>
-                                        <div class="col-sm-6 col-md-6 col-lg-4 col-xl-4">
-                                            <div class="products-single fix">
-                                                <div class="box-img-hover">
-                                                    <div class="type-lb">
-                                                        <p class="new">New</p>
-                                                    </div>
-                                                    <img src="images/img-pro-03.jpg" class="img-fluid" alt="Image">
-                                                    <div class="mask-icon">
-                                                        <ul>
-                                                            <li><a href="#" data-toggle="tooltip" data-placement="right" title="View"><i class="fas fa-eye"></i></a></li>
-                                                            <li><a href="#" data-toggle="tooltip" data-placement="right" title="Compare"><i class="fas fa-sync-alt"></i></a></li>
-                                                            <li><a href="#" data-toggle="tooltip" data-placement="right" title="Add to Wishlist"><i class="far fa-heart"></i></a></li>
-                                                        </ul>
-                                                        <a class="cart" href="#">Add to Cart</a>
-                                                    </div>
-                                                </div>
-                                                <div class="why-text">
-                                                    <h4>Lorem ipsum dolor sit amet</h4>
-                                                    <h5> $9.79</h5>
-                                                </div>
-                                            </div>
-                                        </div>
-                                    </div>
-                                </div>
-                                <div role="tabpanel" class="tab-pane fade" id="list-view">
-                                    <div class="list-view-box">
-                                        <div class="row">
-                                            <div class="col-sm-6 col-md-6 col-lg-4 col-xl-4">
-                                                <div class="products-single fix">
-                                                    <div class="box-img-hover">
-                                                        <div class="type-lb">
-                                                            <p class="new">New</p>
-                                                        </div>
-                                                        <img src="images/Carrot.jpg" class="img-fluid" alt="Image">
-                                                        <div class="mask-icon">
-                                                            <ul>
-                                                                <li><a href="#" data-toggle="tooltip" data-placement="right" title="View"><i class="fas fa-eye"></i></a></li>
-                                                                <li><a href="#" data-toggle="tooltip" data-placement="right" title="Compare"><i class="fas fa-sync-alt"></i></a></li>
-                                                                <li><a href="#" data-toggle="tooltip" data-placement="right" title="Add to Wishlist"><i class="far fa-heart"></i></a></li>
-                                                            </ul>
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+            attribution: '&copy; OpenStreetMap contributors'
+        }).addTo(map);
 
-                                                        </div>
-                                                    </div>
-                                                </div>
-                                            </div>
-                                            <div class="col-sm-6 col-md-6 col-lg-8 col-xl-8">
-                                                <div class="why-text full-width">
-                                                    <h4>Lorem ipsum dolor sit amet</h4>
-                                                    <h5> <del>$ 60.00</del> $40.79</h5>
-                                                    <p>Integer tincidunt aliquet nibh vitae dictum. In turpis sapien, imperdiet quis magna nec, iaculis ultrices ante. Integer vitae suscipit nisi. Morbi dignissim risus sit amet orci porta, eget aliquam purus
-                                                        sollicitudin. Cras eu metus felis. Sed arcu arcu, sagittis in blandit eu, imperdiet sit amet eros. Donec accumsan nisi purus, quis euismod ex volutpat in. Vestibulum eleifend eros ac lobortis aliquet.
-                                                        Suspendisse at ipsum vel lacus vehicula blandit et sollicitudin quam. Praesent vulputate semper libero pulvinar consequat. Etiam ut placerat lectus.</p>
-                                                    <a class="btn hvr-hover" href="#">Add to Cart</a>
-                                                </div>
-                                            </div>
-                                        </div>
-                                    </div>
-                                    <div class="list-view-box">
-                                        <div class="row">
-                                            <div class="col-sm-6 col-md-6 col-lg-4 col-xl-4">
-                                                <div class="products-single fix">
-                                                    <div class="box-img-hover">
-                                                        <div class="type-lb">
-                                                            <p class="sale">Sale</p>
-                                                        </div>
-                                                        <img src="images/Tomato.jpg" class="img-fluid" alt="Image">
-                                                        <div class="mask-icon">
-                                                            <ul>
-                                                                <li><a href="#" data-toggle="tooltip" data-placement="right" title="View"><i class="fas fa-eye"></i></a></li>
-                                                                <li><a href="#" data-toggle="tooltip" data-placement="right" title="Compare"><i class="fas fa-sync-alt"></i></a></li>
-                                                                <li><a href="#" data-toggle="tooltip" data-placement="right" title="Add to Wishlist"><i class="far fa-heart"></i></a></li>
-                                                            </ul>
+        // Comprehensive crop data with real production figures for Indian states and districts
+        const cropData = {
+            "tomato": {
+                "Andhra Pradesh": { 
+                    production: 2438, export: 2.1, import: 0.3, lat: 15.9, lon: 79.7, 
+                    districts: { 
+                        "Guntur": { coords: [16.3, 80.4], production: 872 }, 
+                        "Chittoor": { coords: [13.2, 79.1], production: 760 }, 
+                        "Kurnool": { coords: [15.8, 78.0], production: 543 },
+                        "Anantapur": { coords: [14.7, 77.6], production: 263 }
+                    } 
+                },
+                "Madhya Pradesh": { 
+                    production: 3498, export: 2.5, import: 0.4, lat: 23.5, lon: 77.4, 
+                    districts: { 
+                        "Indore": { coords: [22.7, 75.8], production: 985 }, 
+                        "Bhopal": { coords: [23.2, 77.4], production: 763 }, 
+                        "Gwalior": { coords: [26.2, 78.1], production: 690 },
+                        "Jabalpur": { coords: [23.2, 79.9], production: 562 },
+                        "Ujjain": { coords: [23.2, 75.8], production: 498 }
+                    } 
+                },
+                "Karnataka": { 
+                    production: 1980, export: 1.7, import: 0.2, lat: 15.3, lon: 75.7, 
+                    districts: { 
+                        "Kolar": { coords: [13.1, 78.1], production: 680 }, 
+                        "Bangalore Rural": { coords: [13.3, 77.8], production: 570 }, 
+                        "Belgaum": { coords: [15.9, 74.5], production: 420 },
+                        "Mysore": { coords: [12.3, 76.6], production: 310 }
+                    } 
+                },
+                "Maharashtra": { 
+                    production: 1685, export: 1.4, import: 0.3, lat: 19.8, lon: 75.7, 
+                    districts: { 
+                        "Nashik": { coords: [20.0, 73.8], production: 610 }, 
+                        "Pune": { coords: [18.5, 73.9], production: 520 }, 
+                        "Ahmednagar": { coords: [19.1, 74.7], production: 340 },
+                        "Nagpur": { coords: [21.1, 79.1], production: 215 }
+                    } 
+                },
+                "Gujarat": { 
+                    production: 1240, export: 1.1, import: 0.1, lat: 22.2, lon: 71.5, 
+                    districts: { 
+                        "Ahmedabad": { coords: [23.0, 72.6], production: 415 }, 
+                        "Vadodara": { coords: [22.3, 73.2], production: 380 }, 
+                        "Surat": { coords: [21.2, 72.8], production: 280 },
+                        "Rajkot": { coords: [22.3, 70.8], production: 165 }
+                    } 
+                }
+            },
+            "onion": {
+                "Maharashtra": { 
+                    production: 8760, export: 5.2, import: 0.2, lat: 19.7, lon: 75.7, 
+                    districts: { 
+                        "Nashik": { coords: [19.9, 73.8], production: 3450 }, 
+                        "Pune": { coords: [18.5, 73.8], production: 2160 }, 
+                        "Ahmednagar": { coords: [19.1, 74.7], production: 1850 },
+                        "Jalgaon": { coords: [21.0, 75.5], production: 1300 }
+                    } 
+                },
+                "Karnataka": { 
+                    production: 3200, export: 2.3, import: 0.2, lat: 15.3, lon: 75.7, 
+                    districts: { 
+                        "Belgaum": { coords: [15.9, 74.5], production: 1180 }, 
+                        "Davanagere": { coords: [14.4, 75.9], production: 960 }, 
+                        "Mysore": { coords: [12.3, 76.6], production: 710 },
+                        "Bagalkot": { coords: [16.2, 75.7], production: 350 }
+                    } 
+                },
+                "Gujarat": { 
+                    production: 2580, export: 1.8, import: 0.3, lat: 22.2, lon: 71.5, 
+                    districts: { 
+                        "Bhavnagar": { coords: [21.8, 72.1], production: 980 }, 
+                        "Rajkot": { coords: [22.3, 70.8], production: 850 }, 
+                        "Amreli": { coords: [21.6, 71.2], production: 750 }
+                    } 
+                },
+                "Madhya Pradesh": { 
+                    production: 2240, export: 1.5, import: 0.2, lat: 23.5, lon: 77.4, 
+                    districts: { 
+                        "Indore": { coords: [22.7, 75.8], production: 720 }, 
+                        "Sagar": { coords: [23.8, 78.7], production: 680 }, 
+                        "Ujjain": { coords: [23.2, 75.8], production: 540 },
+                        "Ratlam": { coords: [23.3, 75.0], production: 300 }
+                    } 
+                },
+                "Rajasthan": { 
+                    production: 1380, export: 0.8, import: 0.4, lat: 27.0, lon: 74.0, 
+                    districts: { 
+                        "Jodhpur": { coords: [26.3, 73.0], production: 460 }, 
+                        "Jaipur": { coords: [26.9, 75.8], production: 390 }, 
+                        "Alwar": { coords: [27.6, 76.6], production: 320 },
+                        "Kota": { coords: [25.2, 75.9], production: 210 }
+                    } 
+                }
+            },
+            "potato": {
+                "Uttar Pradesh": { 
+                    production: 15420, export: 3.8, import: 0.1, lat: 26.8, lon: 80.9, 
+                    districts: { 
+                        "Agra": { coords: [27.2, 78.0], production: 3980 }, 
+                        "Kanpur": { coords: [26.5, 80.3], production: 3250 }, 
+                        "Aligarh": { coords: [27.9, 78.1], production: 2980 },
+                        "Farrukhabad": { coords: [27.4, 79.5], production: 2650 },
+                        "Meerut": { coords: [29.0, 77.7], production: 2560 }
+                    } 
+                },
+                "West Bengal": { 
+                    production: 12380, export: 2.9, import: 0.2, lat: 22.9, lon: 87.8, 
+                    districts: { 
+                        "Hooghly": { coords: [22.9, 88.4], production: 3860 }, 
+                        "Burdwan": { coords: [23.2, 87.9], production: 3420 }, 
+                        "Midnapore": { coords: [22.4, 87.3], production: 2750 },
+                        "Nadia": { coords: [23.4, 88.5], production: 2350 }
+                    } 
+                },
+                "Bihar": { 
+                    production: 8560, export: 1.7, import: 0.3, lat: 25.1, lon: 85.5, 
+                    districts: { 
+                        "Patna": { coords: [25.6, 85.1], production: 2240 }, 
+                        "Nalanda": { coords: [25.1, 85.5], production: 1980 }, 
+                        "Muzaffarpur": { coords: [26.1, 85.4], production: 1760 },
+                        "Gaya": { coords: [24.8, 85.0], production: 1420 },
+                        "Bhagalpur": { coords: [25.2, 87.0], production: 1160 }
+                    } 
+                },
+                "Punjab": { 
+                    production: 6780, export: 1.5, import: 0.1, lat: 31.1, lon: 75.4, 
+                    districts: { 
+                        "Jalandhar": { coords: [31.3, 75.6], production: 2430 }, 
+                        "Amritsar": { coords: [31.6, 74.9], production: 1960 }, 
+                        "Hoshiarpur": { coords: [31.5, 75.9], production: 1450 },
+                        "Ludhiana": { coords: [30.9, 75.9], production: 940 }
+                    } 
+                },
+                "Gujarat": { 
+                    production: 3240, export: 0.9, import: 0.3, lat: 22.2, lon: 71.5, 
+                    districts: { 
+                        "Banaskantha": { coords: [24.4, 72.4], production: 1320 }, 
+                        "Mehsana": { coords: [23.6, 72.4], production: 980 }, 
+                        "Sabarkantha": { coords: [23.8, 73.0], production: 940 }
+                    } 
+                }
+            },
+            "sugarcane": {
+                "Uttar Pradesh": { 
+                    production: 177042, export: 15.6, import: 0.0, lat: 26.8, lon: 80.9, 
+                    districts: { 
+                        "Muzaffarnagar": { coords: [29.5, 77.7], production: 28640 }, 
+                        "Bijnor": { coords: [29.4, 78.1], production: 24350 }, 
+                        "Meerut": { coords: [29.0, 77.7], production: 21980 },
+                        "Saharanpur": { coords: [30.0, 77.6], production: 18760 },
+                        "Bareilly": { coords: [28.4, 79.4], production: 16450 },
+                        "Lakhimpur Kheri": { coords: [28.0, 80.4], production: 15240 },
+                        "Sitapur": { coords: [27.6, 80.7], production: 13890 },
+                        "Ghaziabad": { coords: [28.7, 77.4], production: 10450 },
+                        "Baghpat": { coords: [29.1, 77.2], production: 9650 },
+                        "Bulandshahr": { coords: [28.4, 77.8], production: 8530 },
+                        "Shamli": { coords: [29.5, 77.3], production: 9102 }
+                    } 
+                },
+                "Maharashtra": { 
+                    production: 103428, export: 9.8, import: 0.1, lat: 19.7, lon: 75.7, 
+                    districts: { 
+                        "Kolhapur": { coords: [16.7, 74.2], production: 18750 }, 
+                        "Pune": { coords: [18.5, 73.8], production: 16890 }, 
+                        "Solapur": { coords: [17.7, 75.9], production: 15230 },
+                        "Ahmednagar": { coords: [19.1, 74.7], production: 14250 },
+                        "Satara": { coords: [17.7, 74.0], production: 13670 },
+                        "Sangli": { coords: [16.9, 74.6], production: 12980 },
+                        "Osmanabad": { coords: [18.2, 76.0], production: 11658 }
+                    } 
+                },
+                "Karnataka": { 
+                    production: 45120, export: 4.2, import: 0.2, lat: 15.3, lon: 75.7, 
+                    districts: { 
+                        "Belgaum": { coords: [15.9, 74.5], production: 12450 }, 
+                        "Mandya": { coords: [12.5, 76.9], production: 9860 }, 
+                        "Bagalkot": { coords: [16.2, 75.7], production: 7980 },
+                        "Bijapur": { coords: [16.8, 75.7], production: 6530 },
+                        "Shimoga": { coords: [13.9, 75.6], production: 5320 },
+                        "Mysore": { coords: [12.3, 76.6], production: 2980 }
+                    } 
+                },
+                "Tamil Nadu": { 
+                    production: 34270, export: 3.1, import: 0.3, lat: 11.1, lon: 78.6, 
+                    districts: { 
+                        "Coimbatore": { coords: [11.0, 77.0], production: 7865 }, 
+                        "Erode": { coords: [11.3, 77.7], production: 6920 }, 
+                        "Tiruchirapalli": { coords: [10.8, 78.7], production: 5430 },
+                        "Cuddalore": { coords: [11.8, 79.7], production: 4960 },
+                        "Villupuram": { coords: [12.0, 79.5], production: 4180 },
+                        "Thanjavur": { coords: [10.8, 79.1], production: 3250 },
+                        "Salem": { coords: [11.7, 78.2], production: 1665 }
+                    } 
+                },
+                "Gujarat": { 
+                    production: 18640, export: 1.8, import: 0.4, lat: 22.2, lon: 71.5, 
+                    districts: { 
+                        "Surat": { coords: [21.2, 72.8], production: 6420 }, 
+                        "Bharuch": { coords: [21.7, 73.0], production: 5180 }, 
+                        "Navsari": { coords: [20.9, 73.0], production: 3540 },
+                        "Vadodara": { coords: [22.3, 73.2], production: 3500 }
+                    } 
+                }
+            },
+            "jasmine": {
+                "Tamil Nadu": { 
+                    production: 36.7, export: 9.2, import: 0.1, lat: 11.1, lon: 78.6, 
+                    districts: { 
+                        "Madurai": { coords: [9.9, 78.1], production: 9.8 }, 
+                        "Salem": { coords: [11.7, 78.2], production: 7.5 }, 
+                        "Tirunelveli": { coords: [8.7, 77.7], production: 6.4 },
+                        "Dindigul": { coords: [10.4, 78.0], production: 5.2 },
+                        "Coimbatore": { coords: [11.0, 77.0], production: 4.3 },
+                        "Erode": { coords: [11.3, 77.7], production: 3.5 }
+                    } 
+                },
+                "Karnataka": { 
+                    production: 24.5, export: 6.8, import: 0.0, lat: 15.3, lon: 75.7, 
+                    districts: { 
+                        "Mysore": { coords: [12.3, 76.6], production: 8.2 }, 
+                        "Bangalore Rural": { coords: [13.3, 77.8], production: 6.7 }, 
+                        "Tumkur": { coords: [13.3, 77.1], production: 5.1 },
+                        "Kolar": { coords: [13.1, 78.1], production: 4.5 }
+                    } 
+                },
+                "Andhra Pradesh": { 
+                    production: 18.3, export: 4.5, import: 0.1, lat: 15.9, lon: 79.7, 
+                    districts: { 
+                        "Chittoor": { coords: [13.2, 79.1], production: 6.7 }, 
+                        "Nellore": { coords: [14.4, 79.9], production: 5.2 }, 
+                        "Kadapa": { coords: [14.5, 78.8], production: 3.9 },
+                        "Guntur": { coords: [16.3, 80.4], production: 2.5 }
+                    } 
+                },
+                "West Bengal": { 
+                    production: 12.4, export: 2.8, import: 0.3, lat: 22.9, lon: 87.8, 
+                    districts: { 
+                        "Midnapore": { coords: [22.4, 87.3], production: 4.8 }, 
+                        "North 24 Parganas": { coords: [22.6, 88.4], production: 3.7 }, 
+                        "Howrah": { coords: [22.6, 88.3], production: 2.6 },
+                        "Hooghly": { coords: [22.9, 88.4], production: 1.3 }
+                    } 
+                },
+                "Rajasthan": { 
+                    production: 7.2, export: 1.5, import: 0.2, lat: 27.0, lon: 74.0, 
+                    districts: { 
+                        "Jaipur": { coords: [26.9, 75.8], production: 3.1 }, 
+                        "Ajmer": { coords: [26.5, 74.6], production: 2.3 }, 
+                        "Udaipur": { coords: [24.6, 73.7], production: 1.8 }
+                    } 
+                }
+            }
+        };
 
-                                                        </div>
-                                                    </div>
-                                                </div>
-                                            </div>
-                                            <div class="col-sm-6 col-md-6 col-lg-8 col-xl-8">
-                                                <div class="why-text full-width">
-                                                    <h4>Lorem ipsum dolor sit amet</h4>
-                                                    <h5> <del>$ 60.00</del> $40.79</h5>
-                                                    <p>Integer tincidunt aliquet nibh vitae dictum. In turpis sapien, imperdiet quis magna nec, iaculis ultrices ante. Integer vitae suscipit nisi. Morbi dignissim risus sit amet orci porta, eget aliquam purus
-                                                        sollicitudin. Cras eu metus felis. Sed arcu arcu, sagittis in blandit eu, imperdiet sit amet eros. Donec accumsan nisi purus, quis euismod ex volutpat in. Vestibulum eleifend eros ac lobortis aliquet.
-                                                        Suspendisse at ipsum vel lacus vehicula blandit et sollicitudin quam. Praesent vulputate semper libero pulvinar consequat. Etiam ut placerat lectus.</p>
-                                                    <a class="btn hvr-hover" href="#">Add to Cart</a>
-                                                </div>
-                                            </div>
-                                        </div>
-                                    </div>
-                                    <div class="list-view-box">
-                                        <div class="row">
-                                            <div class="col-sm-6 col-md-6 col-lg-4 col-xl-4">
-                                                <div class="products-single fix">
-                                                    <div class="box-img-hover">
-                                                        <div class="type-lb">
-                                                            <p class="sale">Sale</p>
-                                                        </div>
-                                                        <img src="images/img-pro-03.jpg" class="img-fluid" alt="Image">
-                                                        <div class="mask-icon">
-                                                            <ul>
-                                                                <li><a href="#" data-toggle="tooltip" data-placement="right" title="View"><i class="fas fa-eye"></i></a></li>
-                                                                <li><a href="#" data-toggle="tooltip" data-placement="right" title="Compare"><i class="fas fa-sync-alt"></i></a></li>
-                                                                <li><a href="#" data-toggle="tooltip" data-placement="right" title="Add to Wishlist"><i class="far fa-heart"></i></a></li>
-                                                            </ul>
+        // Colors based on production level
+        function getProductionColor(production, cropType) {
+            // Set thresholds based on crop type
+            const thresholds = {
+                "tomato": [1000, 2000],
+                "onion": [2000, 5000],
+                "potato": [5000, 10000],
+                "sugarcane": [30000, 100000],
+                "jasmine": [10, 20]
+            };
+            
+            if (production >= thresholds[cropType][1]) return "#d32f2f"; // High - Red
+            if (production >= thresholds[cropType][0]) return "#ff9800"; // Medium - Orange
+            return "#4caf50"; // Low - Green
+        }
 
-                                                        </div>
-                                                    </div>
-                                                </div>
-                                            </div>
-                                            <div class="col-sm-6 col-md-6 col-lg-8 col-xl-8">
-                                                <div class="why-text full-width">
-                                                    <h4>Lorem ipsum dolor sit amet</h4>
-                                                    <h5> <del>$ 60.00</del> $40.79</h5>
-                                                    <p>Integer tincidunt aliquet nibh vitae dictum. In turpis sapien, imperdiet quis magna nec, iaculis ultrices ante. Integer vitae suscipit nisi. Morbi dignissim risus sit amet orci porta, eget aliquam purus
-                                                        sollicitudin. Cras eu metus felis. Sed arcu arcu, sagittis in blandit eu, imperdiet sit amet eros. Donec accumsan nisi purus, quis euismod ex volutpat in. Vestibulum eleifend eros ac lobortis aliquet.
-                                                        Suspendisse at ipsum vel lacus vehicula blandit et sollicitudin quam. Praesent vulputate semper libero pulvinar consequat. Etiam ut placerat lectus.</p>
-                                                    <a class="btn hvr-hover" href="#">Add to Cart</a>
-                                                </div>
-                                            </div>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
+        // Calculate circle size based on production
+        function getCircleSize(production, cropType) {
+            // Base scale factors
+            const scaleFactors = {
+                "tomato": 15,
+                "onion": 12,
+                "potato": 8,
+                "sugarcane": 0.4,
+                "jasmine": 2000
+            };
+            
+            return Math.sqrt(production * scaleFactors[cropType]) * 1000;
+        }
+
+        // Add markers to map
+        function loadMap(cropType) {
+            // Clear existing layers
+            map.eachLayer(layer => {
+                if (layer instanceof L.Circle || layer instanceof L.CircleMarker || layer instanceof L.Marker) {
+                    map.removeLayer(layer);
+                }
+            });
+
+            // Update crop icon
+            updateCropIcon(cropType);
+            
+            // Add state markers
+            Object.keys(cropData[cropType]).forEach(state => {
+                const data = cropData[cropType][state];
+                const color = getProductionColor(data.production, cropType);
+                const radius = getCircleSize(data.production, cropType);
+
+                const stateCircle = L.circle([data.lat, data.lon], {
+                    color: color,
+                    fillColor: color,
+                    fillOpacity: 0.6,
+                    radius: radius,
+                    className: color === "#d32f2f" ? "pulse" : ""
+                }).addTo(map);
+                
+                // Add popup with state information
+                stateCircle.bindPopup(`
+                    <h3>${state}</h3>
+                    <p><strong>Production:</strong> ${cropType === "jasmine" ? data.production.toFixed(1) : Math.round(data.production)} ${getProductionUnit(cropType)}</p>
+                    <p><strong>Export:</strong> ${data.export} ${getExportUnit(cropType)}</p>
+                    <p><strong>Import:</strong> ${data.import} ${getExportUnit(cropType)}</p>
+                `);
+                
+                // Add click event to show district data
+                stateCircle.on('click', function() {
+                    showStateInfo(state, cropType);
+                });
+                
+                // Add markers for districts with high production (red)
+                Object.keys(data.districts).forEach(district => {
+                    const districtData = data.districts[district];
+                    const districtColor = getProductionColor(districtData.production, cropType);
+                    
+                    // Only add red circles for major production districts
+                    if (districtColor === "#d32f2f") {
+                        const districtRadius = getCircleSize(districtData.production, cropType) * 0.6;
+                        
+                        L.circle(districtData.coords, {
+                            color: districtColor,
+                            fillColor: districtColor,
+                            fillOpacity: 0.8,
+                            radius: districtRadius,
+                            className: "pulse"
+                        }).addTo(map).bindPopup(`
+                            <h3>${district}, ${state}</h3>
+                            <p><strong>Production:</strong> ${cropType === "jasmine" ? districtData.production.toFixed(1) : Math.round(districtData.production)} ${getProductionUnit(cropType)}</p>
+                            <p><strong>Major Production Center</strong></p>
+                        `);
+                    }
+                });
+            });
+        }
+        
+        // Get production unit based on crop type
+        function getProductionUnit(cropType) {
+            if (cropType === "sugarcane") return "thousand tonnes";
+            if (cropType === "jasmine") return "thousand tonnes";
+            return "thousand tonnes";
+        }
+        
+        // Get export/import unit
+        function getExportUnit(cropType) {
+            if (cropType === "sugarcane") return "million tonnes";
+            if (cropType === "jasmine") return "thousand tonnes";
+            return "thousand tonnes";
+        }
+        
+        // Show state information in sidebar
+        function showStateInfo(state, cropType) {
+            const data = cropData[cropType][state];
+            let districtListHTML = "";
+            
+            // Sort districts by production
+            const sortedDistricts = Object.keys(data.districts)
+                .sort((a, b) => data.districts[b].production - data.districts[a].production);
+                
+            // Generate district list HTML
+            sortedDistricts.forEach(district => {
+                const districtData = data.districts[district];
+                const districtColor = getProductionColor(districtData.production, cropType);
+                
+                districtListHTML += `
+                    <div class="district-item" data-district="${district}" data-lat="${districtData.coords[0]}" data-lon="${districtData.coords[1]}">
+                        <div>${district}</div>
+                        <span style="color: ${districtColor}">${cropType === "jasmine" ? districtData.production.toFixed(1) : Math.round(districtData.production)} ${getProductionUnit(cropType)}</span>
+                    </div>
+                `;
+            });
+            
+            // Update state info
+            const stateInfoHTML = `
+                <h2>${state}</h2>
+                <div class="stats">
+                    <div class="stat-box">
+                        <div class="stat-value">${cropType === "jasmine" ? data.production.toFixed(1) : Math.round(data.production)}</div>
+                        <div class="stat-label">Production (${getProductionUnit(cropType)})</div>
+                    </div>
+                    <div class="stat-box">
+                        <div class="stat-value">${data.export}</div>
+                        <div class="stat-label">Export (${getExportUnit(cropType)})</div>
+                    </div>
+                    <div class="stat-box">
+                        <div class="stat-value">${data.import}</div>
+                        <div class="stat-label">Import (${getExportUnit(cropType)})</div>
                     </div>
                 </div>
-				<div class="col-xl-3 col-lg-3 col-sm-12 col-xs-12 sidebar-shop-left">
-                    <div class="product-categori">
-                        <div class="search-product">
-                            <form action="#">
-                                <input class="form-control" placeholder="Search here..." type="text">
-                                <button type="submit"> <i class="fa fa-search"></i> </button>
-                            </form>
-                        </div>
-                        <div class="filter-sidebar-left">
-                            <div class="title-left">
-                                <h3>Categories</h3>
-                            </div>
-                            <div class="list-group list-group-collapse list-group-sm list-group-tree" id="list-group-men" data-children=".sub-men">
-                                <div class="list-group-collapse sub-men">
-                                    <a class="list-group-item list-group-item-action" href="#sub-men1" data-toggle="collapse" aria-expanded="true" aria-controls="sub-men1">Fruits & Drinks <small class="text-muted">(100)</small>
-								</a>
-                                    <div class="collapse show" id="sub-men1" data-parent="#list-group-men">
-                                        <div class="list-group">
-                                            <a href="#" class="list-group-item list-group-item-action active">Fruits 1 <small class="text-muted">(50)</small></a>
-                                            <a href="#" class="list-group-item list-group-item-action">Fruits 2 <small class="text-muted">(10)</small></a>
-                                            <a href="#" class="list-group-item list-group-item-action">Fruits 3 <small class="text-muted">(10)</small></a>
-                                            <a href="#" class="list-group-item list-group-item-action">Fruits 4 <small class="text-muted">(10)</small></a>
-                                            <a href="#" class="list-group-item list-group-item-action">Fruits 5 <small class="text-muted">(20)</small></a>
-                                        </div>
-                                    </div>
-                                </div>
-                                <div class="list-group-collapse sub-men">
-                                    <a class="list-group-item list-group-item-action" href="#sub-men2" data-toggle="collapse" aria-expanded="false" aria-controls="sub-men2">Vegetables 
-								<small class="text-muted">(50)</small>
-								</a>
-                                    <div class="collapse" id="sub-men2" data-parent="#list-group-men">
-                                        <div class="list-group">
-                                            <a href="#" class="list-group-item list-group-item-action">Vegetables 1 <small class="text-muted">(10)</small></a>
-                                            <a href="#" class="list-group-item list-group-item-action">Vegetables 2 <small class="text-muted">(20)</small></a>
-                                            <a href="#" class="list-group-item list-group-item-action">Vegetables 3 <small class="text-muted">(20)</small></a>
-                                        </div>
-                                    </div>
-                                </div>
-                                <a href="#" class="list-group-item list-group-item-action"> Grocery  <small class="text-muted">(150) </small></a>
-                                <a href="#" class="list-group-item list-group-item-action"> Grocery <small class="text-muted">(11)</small></a>
-                                <a href="#" class="list-group-item list-group-item-action"> Grocery <small class="text-muted">(22)</small></a>
-                            </div>
-                        </div>
-                        <div class="filter-price-left">
-                            <div class="title-left">
-                                <h3>Price</h3>
-                            </div>
-                            <div class="price-box-slider">
-                                <div id="slider-range"></div>
-                                <p>
-                                    <input type="text" id="amount" readonly style="border:0; color:#fbb714; font-weight:bold;">
-                                    <button class="btn hvr-hover" type="submit">Filter</button>
-                                </p>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div>
-    <!-- End Shop Page -->
-
-
-    <!-- Start Footer  -->
-    <footer>
-        <div class="footer-main">
-            <div class="container">
-				<div class="row">
-					<div class="col-lg-4 col-md-12 col-sm-12">
-						<div class="footer-top-box">
-							<h3>Business Time</h3>
-							<ul class="list-time">
-								<li>Monday - Friday: 08.00am to 05.00pm</li> <li>Saturday: 10.00am to 08.00pm</li> <li>Sunday: <span>Closed</span></li>
-							</ul>
-						</div>
-					</div>
-					<div class="col-lg-4 col-md-12 col-sm-12">
-						<div class="footer-top-box">
-							<h3>Newsletter</h3>
-							<form class="newsletter-box">
-								<div class="form-group">
-									<input class="" type="email" name="Email" placeholder="Email Address*" />
-									<i class="fa fa-envelope"></i>
-								</div>
-								<button class="btn hvr-hover" type="submit">Submit</button>
-							</form>
-						</div>
-					</div>
-					<div class="col-lg-4 col-md-12 col-sm-12">
-						<div class="footer-top-box">
-							<h3>Social Media</h3>
-							<p>Lorem ipsum dolor sit amet, consectetur adipiscing elit.</p>
-							<ul>
-                                <li><a href="#"><i class="fab fa-facebook" aria-hidden="true"></i></a></li>
-                                <li><a href="#"><i class="fab fa-twitter" aria-hidden="true"></i></a></li>
-                                <li><a href="#"><i class="fab fa-linkedin" aria-hidden="true"></i></a></li>
-                                <li><a href="#"><i class="fab fa-google-plus" aria-hidden="true"></i></a></li>
-                                <li><a href="#"><i class="fa fa-rss" aria-hidden="true"></i></a></li>
-                                <li><a href="#"><i class="fab fa-pinterest-p" aria-hidden="true"></i></a></li>
-                                <li><a href="#"><i class="fab fa-whatsapp" aria-hidden="true"></i></a></li>
-                            </ul>
-						</div>
-					</div>
-				</div>
-				<hr>
-                <div class="row">
-                    <div class="col-lg-4 col-md-12 col-sm-12">
-                        <div class="footer-widget">
-                            <h4>About Freshshop</h4>
-                            <p>Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat.</p> 
-							<p>Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. </p> 							
-                        </div>
-                    </div>
-                    <div class="col-lg-4 col-md-12 col-sm-12">
-                        <div class="footer-link">
-                            <h4>Information</h4>
-                            <ul>
-                                <li><a href="#">About Us</a></li>
-                                <li><a href="#">Customer Service</a></li>
-                                <li><a href="#">Our Sitemap</a></li>
-                                <li><a href="#">Terms &amp; Conditions</a></li>
-                                <li><a href="#">Privacy Policy</a></li>
-                                <li><a href="#">Delivery Information</a></li>
-                            </ul>
-                        </div>
-                    </div>
-                    <div class="col-lg-4 col-md-12 col-sm-12">
-                        <div class="footer-link-contact">
-                            <h4>Contact Us</h4>
-                            <ul>
-                                <li>
-                                    <p><i class="fas fa-map-marker-alt"></i>Address: Michael I. Days 3756 <br>Preston Street Wichita,<br> KS 67213 </p>
-                                </li>
-                                <li>
-                                    <p><i class="fas fa-phone-square"></i>Phone: <a href="tel:+1-888705770">+1-888 705 770</a></p>
-                                </li>
-                                <li>
-                                    <p><i class="fas fa-envelope"></i>Email: <a href="mailto:contactinfo@gmail.com">contactinfo@gmail.com</a></p>
-                                </li>
-                            </ul>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </footer>
-    <!-- End Footer  -->
-
-    <!-- Start copyright  -->
-    <div class="footer-copyright">
-        <p class="footer-company">All Rights Reserved. &copy; 2018 <a href="#">ThewayShop</a> Design By :
-            <a href="https://html.design/">html design</a></p>
-    </div>
-    <!-- End copyright  -->
-
-    <a href="#" id="back-to-top" title="Back to top" style="display: none;">&uarr;</a>
-
-    <!-- ALL JS FILES -->
-    <script src="js/jquery-3.2.1.min.js"></script>
-    <script src="js/popper.min.js"></script>
-    <script src="js/bootstrap.min.js"></script>
-    <!-- ALL PLUGINS -->
-    <script src="js/jquery.superslides.min.js"></script>
-    <script src="js/bootstrap-select.js"></script>
-    <script src="js/inewsticker.js"></script>
-    <script src="js/bootsnav.js."></script>
-    <script src="js/images-loded.min.js"></script>
-    <script src="js/isotope.min.js"></script>
-    <script src="js/owl.carousel.min.js"></script>
-    <script src="js/baguetteBox.min.js"></script>
-    <script src="js/jquery-ui.js"></script>
-    <script src="js/jquery.nicescroll.min.js"></script>
-    <script src="js/form-validator.min.js"></script>
-    <script src="js/contact-form-script.js"></script>
-    <script src="js/custom.js"></script>
+                <h3>Districts (${Object.keys(data.districts).length})</h3>
+            `;
+            
+            document.getElementById('state-info').innerHTML = stateInfoHTML;
+            document.getElementById('district-list').innerHTML = districtListHTML;
+            
+            // Add click event to district items
+            document.querySelectorAll('.district-item').forEach(item => {
+                item.addEventListener('click', function() {
+                    const lat = parseFloat(this.getAttribute('data-lat'));
+                    const lon = parseFloat(this.getAttribute('data-lon'));
+                    map.flyTo([lat, lon], 9, {
+                        animate: true,
+                        duration: 1.5
+                    });
+                    
+                    // Add highlight effect
+                    gsap.fromTo(this, 
+                        {backgroundColor: '#fff'},
+                        {backgroundColor: '#f0f0f0', duration: 0.3, repeat: 1, yoyo: true}
+                    );
+                });
+            });
+            
+            // Animation for stats boxes
+            gsap.from('.stat-box', {
+                y: 20,
+                opacity: 0,
+                duration: 0.5,
+                stagger: 0.1,
+                ease: "power2.out"
+            });
+        }
+        
+        // Update crop icon based on selected crop
+        function updateCropIcon(cropType) {
+            const cropIconUrls = {
+                "tomato": "https://cdnjs.cloudflare.com/ajax/libs/twemoji/14.0.2/svg/1f345.svg",
+                "onion": "https://cdnjs.cloudflare.com/ajax/libs/twemoji/14.0.2/svg/1f957.svg",
+                "potato": "https://cdnjs.cloudflare.com/ajax/libs/twemoji/14.0.2/svg/1f954.svg",
+                "sugarcane": "https://cdnjs.cloudflare.com/ajax/libs/twemoji/14.0.2/svg/1f33e.svg",
+                "jasmine": "https://cdnjs.cloudflare.com/ajax/libs/twemoji/14.0.2/svg/1f4ae.svg"
+            };
+            
+            document.getElementById('crop-icon').src = cropIconUrls[cropType] || "/api/placeholder/50/50";
+        }
+        
+        // Event listeners
+        document.addEventListener('DOMContentLoaded', function() {
+            // Initialize with first crop
+            loadMap('tomato');
+            
+            // Crop selection events
+            document.getElementById('crop-select').addEventListener('change', function() {
+                const selectedCrop = this.value;
+                
+                // Update active badge
+                document.querySelectorAll('.crop-badge').forEach(badge => {
+                    badge.classList.remove('active');
+                    if (badge.getAttribute('data-crop') === selectedCrop) {
+                        badge.classList.add('active');
+                    }
+                });
+                
+                loadMap(selectedCrop);
+            });
+            
+            // Crop badge clicks
+            document.querySelectorAll('.crop-badge').forEach(badge => {
+                badge.addEventListener('click', function() {
+                    const selectedCrop = this.getAttribute('data-crop');
+                    
+                    // Update select dropdown
+                    document.getElementById('crop-select').value = selectedCrop;
+                    
+                    // Update active badge
+                    document.querySelectorAll('.crop-badge').forEach(badge => {
+                        badge.classList.remove('active');
+                    });
+                    this.classList.add('active');
+                    
+                    loadMap(selectedCrop);
+                });
+            });
+            
+            // Search functionality
+            document.getElementById('search').addEventListener('input', function() {
+                const searchTerm = this.value.toLowerCase();
+                const selectedCrop = document.getElementById('crop-select').value;
+                
+                if (searchTerm.length < 2) return;
+                
+                // Search through states and districts
+                let found = false;
+                
+                Object.keys(cropData[selectedCrop]).forEach(state => {
+                    if (state.toLowerCase().includes(searchTerm)) {
+                        // Show state info if state name matches
+                        showStateInfo(state, selectedCrop);
+                        found = true;
+                        
+                        // Fly to state
+                        const stateData = cropData[selectedCrop][state];
+                        map.flyTo([stateData.lat, stateData.lon], 7, {
+                            animate: true,
+                            duration: 1.5
+                        });
+                    }
+                    
+                    // Search through districts
+                    Object.keys(cropData[selectedCrop][state].districts).forEach(district => {
+                        if (district.toLowerCase().includes(searchTerm)) {
+                            // Show state info if district name matches
+                            showStateInfo(state, selectedCrop);
+                            found = true;
+                            
+                            // Highlight the district
+                            setTimeout(() => {
+                                const districtItem = document.querySelector(`.district-item[data-district="${district}"]`);
+                                if (districtItem) {
+                                    districtItem.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                                    
+                                    // Add highlight effect
+                                    gsap.fromTo(districtItem, 
+                                        {backgroundColor: '#fff'},
+                                        {backgroundColor: '#f0f0f0', duration: 0.5, repeat: 2, yoyo: true}
+                                    );
+                                    
+                                    // Fly to district
+                                    const districtData = cropData[selectedCrop][state].districts[district];
+                                    map.flyTo(districtData.coords, 9, {
+                                        animate: true,
+                                        duration: 1.5
+                                    });
+                                }
+                            }, 300);
+                        }
+                    });
+                });
+                
+                if (!found && searchTerm.length > 2) {
+                    document.getElementById('state-info').innerHTML = `<p>No results found for "${this.value}"</p>`;
+                    document.getElementById('district-list').innerHTML = '';
+                }
+            });
+            
+            // Toggle sidebar
+            document.getElementById('toggle-btn').addEventListener('click', function() {
+                const sidebar = document.getElementById('sidebar');
+                sidebar.classList.toggle('sidebar-collapsed');
+                
+                if (sidebar.classList.contains('sidebar-collapsed')) {
+                    this.style.left = '10px';
+                    this.innerHTML = '→';
+                } else {
+                    this.style.left = 'calc(30% + 10px)';
+                    this.innerHTML = '≡';
+                }
+                
+                // Trigger map resize to adjust view
+                setTimeout(() => {
+                    map.invalidateSize();
+                }, 300);
+            });
+            
+            // Add animations to sidebar elements on load
+            gsap.from('#sidebar > *', {
+                x: -20,
+                opacity: 0,
+                duration: 0.5,
+                stagger: 0.1,
+                ease: "power2.out"
+            });
+            
+            // Add tooltips to controls
+            const tooltip = document.createElement('div');
+            tooltip.className = 'tooltip';
+            tooltip.style.position = 'absolute';
+            tooltip.style.background = 'rgba(0,0,0,0.7)';
+            tooltip.style.color = 'white';
+            tooltip.style.padding = '5px 10px';
+            tooltip.style.borderRadius = '4px';
+            tooltip.style.fontSize = '12px';
+            tooltip.style.zIndex = '1000';
+            tooltip.style.pointerEvents = 'none';
+            tooltip.style.opacity = '0';
+            tooltip.style.transition = 'opacity 0.3s';
+            document.body.appendChild(tooltip);
+            
+            // Add tooltip event listeners to interactive elements
+            document.querySelectorAll('.crop-badge, select, .toggle-sidebar').forEach(el => {
+                el.addEventListener('mouseenter', function(e) {
+                    let text = '';
+                    if (this.classList.contains('crop-badge')) {
+                        text = `View ${this.getAttribute('data-crop')} production data`;
+                    } else if (this.tagName === 'SELECT') {
+                        text = 'Select a crop to view its production data';
+                    } else if (this.classList.contains('toggle-sidebar')) {
+                        text = 'Toggle sidebar visibility';
+                    }
+                    
+                    tooltip.textContent = text;
+                    tooltip.style.opacity = '1';
+                    tooltip.style.left = `${e.pageX + 10}px`;
+                    tooltip.style.top = `${e.pageY + 10}px`;
+                });
+                
+                el.addEventListener('mousemove', function(e) {
+                    tooltip.style.left = `${e.pageX + 10}px`;
+                    tooltip.style.top = `${e.pageY + 10}px`;
+                });
+                
+                el.addEventListener('mouseleave', function() {
+                    tooltip.style.opacity = '0';
+                });
+            });
+            
+            // Add responsive behaviors
+            function handleResize() {
+                if (window.innerWidth < 768) {
+                    // Auto-collapse sidebar on mobile
+                    document.getElementById('sidebar').classList.add('sidebar-collapsed');
+                    document.getElementById('toggle-btn').style.left = '10px';
+                    document.getElementById('toggle-btn').innerHTML = '→';
+                } else {
+                    // Expand sidebar on desktop
+                    document.getElementById('sidebar').classList.remove('sidebar-collapsed');
+                    document.getElementById('toggle-btn').style.left = 'calc(30% + 10px)';
+                    document.getElementById('toggle-btn').innerHTML = '≡';
+                }
+                
+                // Adjust map view
+                map.invalidateSize();
+            }
+            
+            window.addEventListener('resize', handleResize);
+            handleResize(); // Run once on load
+        });
+    </script>
 </body>
-
 </html>
